@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chapter I — The Steward's Compass</title>
+<style>
+:root{--bg:#0b0f1a;--card:#0f1724;--accent:#9ad3bc;--muted:#94a3b8;--glass:rgba(255,255,255,0.04)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;color:#e6eef6;background:linear-gradient(180deg,#081021 0%,#051021 60%);}
+.app{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.container{width:980px;max-width:96%;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:14px;padding:28px;box-shadow:0 10px 30px rgba(2,6,23,0.7);backdrop-filter: blur(6px);border:1px solid rgba(255,255,255,0.03)}
+.splash{display:flex;flex-direction:column;align-items:center;justify-content:center;height:420px;text-align:center;padding:24px;position:relative;overflow:hidden}
+.splash h1{font-size:32px;margin:0 0 8px;color:var(--accent)}
+.splash p{color:var(--muted);margin:0 0 18px;max-width:72%}
+.button{padding:12px 18px;border-radius:10px;border:none;background:var(--accent);color:#041018;font-weight:600;cursor:pointer;font-size:15px;box-shadow:0 6px 16px rgba(154,211,188,0.12)}
+.choices{display:flex;gap:12px;margin-top:18px}
+.menu{display:grid;grid-template-columns:1fr 320px;gap:16px}
+.story-card{background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:18px;border-radius:12px;border:1px solid var(--glass)}
+.story{min-height:360px;position:relative;overflow:hidden}
+.page{position:absolute;inset:0;padding:18px;transform-origin:left center;backface-visibility:hidden}
+.page.hidden{display:none}
+.page h2{margin-top:0;color:var(--accent)}
+.choices-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.choice-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;color:var(--muted);cursor:pointer;text-align:left}
+.choice-btn:hover{border-color:rgba(154,211,188,0.18);color:#dff7ee}
+.breadcrumbs{font-size:13px;color:var(--muted);margin-bottom:10px}
+.meta{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.small{font-size:13px;color:var(--muted)}
+/* Animations */
+.fade-in{animation:fadeIn .6s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.page-turn{animation:pageTurn .7s cubic-bezier(.2,.9,.2,1) both}
+@keyframes pageTurn{0%{transform:rotateY(0deg) translateX(0) scale(1)}50%{transform:rotateY(-60deg) translateX(-8%) scale(.98)}100%{transform:rotateY(-120deg) translateX(-100%) scale(.96);opacity:0}}
+@media (max-width:820px){.menu{grid-template-columns:1fr;}.splash{height:360px}.container{padding:18px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="container" role="main">
+    <div id="splash" class="splash fade-in">
+      <h1>Chapter I — The Steward's Compass</h1>
+      <p>Welcome. The world is asking for a steward. Choices come wrapped in weather, code, and old stories. Today you decide: will you bind yourself to the land, to the law, or to the people? Choose deliberately — the earth remembers.</p>
+      <div class="choices">
+        <button id="beginBtn" class="button">Enter the Council Room</button>
+      </div>
+    </div>
+
+    <div id="mainUI" class="menu" style="display:none">
+      <div class="story-card story">
+        <div class="breadcrumbs small" id="breadcrumbs">Start</div>
+        <div id="pageArea">
+          <!-- dynamic pages inject here -->
+        </div>
+        <div class="footer">
+          <div class="meta small" id="meta">Turn: <span id="turnCount">0</span> • Memory: <span id="memCount">0</span></div>
+          <div>
+            <button id="backBtn" class="choice-btn">◀ Back</button>
+            <button id="resetBtn" class="choice-btn">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="story-card" style="height:100%">
+        <h3 style="margin-top:0;color:var(--accent)">Choices & Profile</h3>
+        <div class="small">Your decisions change future text, open new paths, and alter the steward score. The system persists choices to local storage.</div>
+
+        <div style="margin-top:12px">
+          <div><strong>Available Actions</strong></div>
+          <div class="choices-list" id="choiceList">
+            <!-- choice buttons -->
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0">
+        <div>
+          <div class="small"><strong>Breadcrumbs</strong></div>
+          <div id="crumbsBox" style="margin-top:8px;color:var(--muted);font-size:13px;min-height:48px"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* Story engine: branching nodes stored as objects. Each node has id, title, text, choices[]. Choices point to other node ids and carry effects. */
+const NODES = {
+  "start":{
+    id:"start",
+    title:"The Council Room",
+    text:`You step into a wide room hemmed by living walls. Maps and smoke and code hang in the air. Three chairs remain: one for the Land, one for the Law, and one for the People. A bell tolls once.`,
+    choices:[
+      {id:"choose_land",label:"Sit with the Land",desc:"Prioritize ecosystems, restoration, and sensor-based response."},
+      {id:"choose_law",label:"Sit with the Law",desc:"Prioritize legal safeguards, contracts, and anti-corruption systems."},
+      {id:"choose_people",label:"Sit with the People",desc:"Prioritize communities, education, and distributed care networks."}
+    ]
+  },
+  "choose_land":{
+    id:"choose_land",
+    title:"With the Land",
+    text:`You accept a seat carved from driftwood. The walls themselves breathe. You inherit a seed-list of degraded sites, a set of drones, and a fragile data stream of biosignals. The first task is triage.`,
+    choices:[
+      {id:"land_triage",label:"Run a triage survey",desc:"Use sensors and local knowledge to prioritize fires, water stress, and soil collapse."},
+      {id:"land_oracle",label:"Open the Oracle Layer",desc:"Connect ecological oracles to governance; allow sensors to nudge decisions."},
+      {id:"back",label:"Return to Chair Selection",desc:"Step back and reconsider."}
+    ]
+  },
+  "choose_law":{
+    id:"choose_law",
+    title:"With the Law",
+    text:`You take a chair of hammered bronze stamped with clauses. Your ledger waits. There are loopholes and an old public trust that needs rewriting. How do you begin?`,
+    choices:[
+      {id:"law_draft",label:"Draft a Charter",desc:"Write non-negotiable rules and guardrails for stewardship."},
+      {id:"law_vault",label:"Secure the Vault",desc:"Set up multisig, funds, and emergency overrides."},
+      {id:"back",label:"Return to Chair Selection",desc:"Step back and reconsider."}
+    ]
+  },
+  "choose_people":{
+    id:"choose_people",
+    title:"With the People",
+    text:`Children's drawings hang beside network graphs. A ragtag group is here — volunteers, elders, and coders. They ask for training, tools, and a safe channel to coordinate. What do you offer first?`,
+    choices:[
+      {id:"people_train",label:"Begin Training Cohorts",desc:"Design short, high-impact training for local stewards."},
+      {id:"people_toolkit",label:"Distribute Toolkits",desc:"Ship low-cost sensor kits and governance templates."},
+      {id:"back",label:"Return to Chair Selection",desc:"Step back and reconsider."}
+    ]
+  },
+
+  /* Land subtree */
+  "land_triage":{
+    id:"land_triage",
+    title:"Triage Survey",
+    text:`Sensors stream: heat, moisture, insect chorus. You mark three hotspots and route a drone swarm with a microgrant to test soil and seed viability. The choice will cost time but gains ecological trust.`,
+    choices:[
+      {id:"land_seed",label:"Seed a pilot plot",desc:"Begin an assisted recovery plot with native species."},
+      {id:"land_back",label:"Reconsider triage priority",desc:"Adjust the survey algorithm."}
+    ],
+    effects:{stewardScore:6,ecoDepth:2}
+  },
+  "land_oracle":{
+    id:"land_oracle",
+    title:"Oracle Layer",
+    text:`You bind a stream of vetted sensor feeds to proposal thresholds. When soil moisture drops below a percentile, an automatic relief fund can be unlocked — but only with multisig consensus.`,
+    choices:[
+      {id:"law_vault",label:"Link to Vault (legal)",desc:"Connect oracle triggers to legal safeguards."},
+      {id:"people_toolkit",label:"Share Oracles with Communities",desc:"Give local stewards read access and alert channels."}
+    ],
+    effects:{stewardScore:8,techDepth:3}
+  },
+
+  /* Law subtree */
+  "law_draft":{
+    id:"law_draft",
+    title:"Drafting the Charter",
+    text:`Words harden into code. You draft limits: emergency veto, audit trails, non-transferable reputation for stewards, and a narrow purpose clause. This reduces capture risk.`,
+    choices:[
+      {id:"law_publish",label:"Publish & Open Review",desc:"Invite public review and comment."},
+      {id:"law_vault",label:"Implement the Multisig Vault",desc:"Protect initial funds under guardianship."}
+    ],
+    effects:{stewardScore:5,legalDepth:3}
+  },
+  "law_vault":{
+    id:"law_vault",
+    title:"The Vault",
+    text:`You place the keys in a coffer that requires many hands. You set a rotating guardianship, timelocks, and an emergency pause. It feels less romantic and more durable.`,
+    choices:[
+      {id:"law_audit",label:"Open the Audit Log",desc:"Make all actions transparent and timestamped."},
+      {id:"people_toolkit",label:"Fund Community Toolkits",desc:"Grant to training and kits."}
+    ],
+    effects:{stewardScore:7,securityDepth:4}
+  },
+  "law_audit":{
+    id:"law_audit",
+    title:"Audit Log",
+    text:`Each vote, transfer, and override writes to the ledger with an attached justification. A public mirror indexes these for journalists and scientists.`,
+    choices:[{id:"back",label:"Return to Law Chair",desc:"Back"}],
+    effects:{transparency:5}
+  },
+
+  /* People subtree */
+  "people_train":{
+    id:"people_train",
+    title:"Training Cohorts",
+    text:`You design 7-day intensive steward bootcamps mixing soil work, governance simulation, and repair ethics. Graduates get reputation credit and microgrants.`,
+    choices:[{id:"people_toolkit",label:"Include Toolkit Distribution",desc:"Equip graduates with kits."},{id:"back",label:"Return to People Chair",desc:"Back"}],
+    effects:{peopleDepth:4}
+  },
+  "people_toolkit":{
+    id:"people_toolkit",
+    title:"Toolkits Deployed",
+    text:`Low-cost sensor bundles, seed packets, and a nimble handbook are shipped. You measure uptake. Some communities request localized translations.`,
+    choices:[{id:"people_train",label:"Set up Cohorts",desc:"Add training"},{id:"land_oracle",label:"Share sensor data with Land",desc:"Connect sensors to oracles"}],
+    effects:{reach:5,peopleDepth:3}
+  }
+};
+
+/* State management */
+const STATE_KEY = 'steward_state_v1';
+let state = loadState();
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STATE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){console.warn(e)}
+  return {crumbs:[],turns:0,mem:{},current:'start',stewardScore:0};
+}
+
+function saveState(){
+  localStorage.setItem(STATE_KEY,JSON.stringify(state));
+}
+
+function resetState(){
+  state = {crumbs:[],turns:0,mem:{},current:'start',stewardScore:0};
+  saveState();
+  render();
+}
+
+/* UI helpers */
+const splash = document.getElementById('splash');
+const beginBtn = document.getElementById('beginBtn');
+const mainUI = document.getElementById('mainUI');
+const choiceList = document.getElementById('choiceList');
+const pageArea = document.getElementById('pageArea');
+const crumbsBox = document.getElementById('crumbsBox');
+const backBtn = document.getElementById('backBtn');
+const resetBtn = document.getElementById('resetBtn');
+const breadcrumbs = document.getElementById('breadcrumbs');
+const turnCount = document.getElementById('turnCount');
+const memCount = document.getElementById('memCount');
+
+beginBtn.addEventListener('click',()=>{splash.style.display='none';mainUI.style.display='grid';render();});
+backBtn.addEventListener('click',()=>{goBack();});
+resetBtn.addEventListener('click',()=>{if(confirm('Reset progress?')) resetState();});
+
+function render(){
+  // update meta
+  breadcrumbs.textContent = state.current;
+  turnCount.textContent = state.turns;
+  memCount.textContent = Object.keys(state.mem||{}).length;
+  crumbsBox.textContent = state.crumbs.join(' → ');
+
+  // render current page
+  const node = NODES[state.current];
+  renderPage(node);
+  renderChoices(node);
+  saveState();
+}
+
+function renderPage(node){
+  // create page element
+  pageArea.innerHTML='';
+  const el = document.createElement('div');
+  el.className='page fade-in';
+  el.innerHTML = `<h2>${escapeHtml(node.title)}</h2><p style="color:var(--muted);line-height:1.55">${escapeHtml(node.text)}</p>`;
+  pageArea.appendChild(el);
+}
+
+function renderChoices(node){
+  choiceList.innerHTML='';
+  node.choices.forEach(c=>{
+    const btn = document.createElement('button');
+    btn.className='choice-btn';
+    btn.innerHTML = `<strong>${escapeHtml(c.label)}</strong><div style="font-size:12px;color:var(--muted)">${escapeHtml(c.desc||'')}</div>`;
+    btn.addEventListener('click',()=>{choose(c.id)});
+    choiceList.appendChild(btn);
+  });
+}
+
+function choose(choiceId){
+  const node = NODES[state.current];
+  // special back
+  if(choiceId==='back'){goBack();return}
+  // find target in node choices
+  const choice = (node.choices||[]).find(x=>x.id===choiceId) || null;
+  // if choice points to a node defined globally, go there
+  const target = NODES[choiceId] ? choiceId : (choice && choice.id && NODES[choice.id] ? choice.id : null);
+  // if target not found, try matching root-level
+  const realTarget = NODES[choiceId] ? choiceId : (NODES[choice && choice.id] ? choice.id : null);
+  // page-turn animation
+  const page = pageArea.querySelector('.page');
+  if(page){
+    page.classList.add('page-turn');
+    setTimeout(()=>{
+      // apply effects if any
+      applyEffects(choiceId);
+      // set new state
+      if(NODES[choiceId]) state.current = choiceId;
+      else if(realTarget) state.current = realTarget;
+      else {
+        // fallback: if id matches known node
+        if(NODES[choiceId]) state.current = choiceId; else {console.warn('missing node', choiceId);}
+      }
+      state.crumbs.push(choiceId);
+      state.turns += 1;
+      saveState();
+      render();
+    },520);
+  }
+}
+
+function applyEffects(choiceId){
+  // If node has effects, fold them into state
+  const node = NODES[choiceId] || NODES[state.current];
+  if(node && node.effects){
+    Object.keys(node.effects).forEach(k=>{
+      state[k] = (state[k]||0) + node.effects[k];
+      if(k==='stewardScore') state.stewardScore = (state.stewardScore||0)+node.effects[k];
+    });
+  }
+}
+
+function goBack(){
+  if(state.crumbs.length<=1){state.current='start';state.crumbs=[];state.turns=0;saveState();render();return}
+  state.crumbs.pop();
+  const last = state.crumbs[state.crumbs.length-1]||'start';
+  state.current = last;
+  state.turns = Math.max(0,state.turns-1);
+  saveState();
+  render();
+}
+
+function escapeHtml(s){return String(s).replace(/[&<>"']/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+
+// initialize crumbs if empty
+if(!state.crumbs || state.crumbs.length===0) state.crumbs=['start'];
+
+// expose a simple export of breadcrumbs to clipboard
+function exportBreadcrumbs(){
+  navigator.clipboard && navigator.clipboard.writeText(state.crumbs.join(' > '));
+}
+
+// hotkeys
+window.addEventListener('keydown',(e)=>{
+  if(e.key==='r'&&e.ctrlKey){e.preventDefault();resetState();}
+  if(e.key==='b'&&e.ctrlKey){e.preventDefault();goBack();}
+});
+
+// auto-render if main shown (in case state loaded)
+if(localStorage.getItem(STATE_KEY)){splash.style.display='none';mainUI.style.display='grid';render();}
+
+</script>
+</body>
+</html>
