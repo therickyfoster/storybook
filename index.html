@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Winter Book Reader - Planetary Restoration Archive</title>
+<style>
+  :root {
+    --bg-primary: #1a2332;
+    --bg-secondary: #0d1520;
+    --text-primary: #e8f4f8;
+    --text-secondary: #b8d4e0;
+    --accent-gold: #7ec8e3;
+    --ice-blue: #a8d8ea;
+    --snow-white: #f0f8ff;
+    --paper-light: #f9fbfc;
+    --paper-dark: #e0e8f0;
+    --shadow-book: rgba(0, 0, 0, 0.6);
+    --transition-speed: 1.2s;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: linear-gradient(135deg, #0d1520 0%, #1a2f45 50%, #2a4560 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    perspective: 2000px;
+    position: relative;
+  }
+
+  /* =====================================================
+     SNOWFALL ANIMATION
+     ===================================================== */
+  #snowCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* =====================================================
+     FROST OVERLAY
+     ===================================================== */
+  .frost-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 20% 30%, rgba(168, 216, 234, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(168, 216, 234, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* =====================================================
+     GAMIFICATION PANEL
+     ===================================================== */
+  .game-stats {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: rgba(26, 35, 50, 0.95);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--ice-blue);
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 1000;
+    min-width: 300px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .game-stats::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .game-stats::-webkit-scrollbar-track {
+    background: rgba(13, 21, 32, 0.6);
+    border-radius: 4px;
+  }
+
+  .game-stats::-webkit-scrollbar-thumb {
+    background: var(--ice-blue);
+    border-radius: 4px;
+  }
+
+  .game-stats h3 {
+    color: var(--ice-blue);
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(126, 200, 227, 0.5);
+  }
+
+  .currency-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 15px 0;
+  }
+
+  .currency-card {
+    background: rgba(168, 216, 234, 0.1);
+    border: 1px solid rgba(126, 200, 227, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+
+  .currency-card:hover {
+    background: rgba(168, 216, 234, 0.2);
+    transform: translateY(-2px);
+    border-color: var(--ice-blue);
+  }
+
+  .currency-icon {
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+    display: block;
+  }
+
+  .currency-amount {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--ice-blue);
+    text-shadow: 0 0 8px rgba(126, 200, 227, 0.4);
+  }
+
+  .currency-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 3px;
+  }
+
+  .stat-section {
+    margin: 20px 0;
+    padding: 15px 0;
+    border-top: 1px solid rgba(126, 200, 227, 0.2);
+  }
+
+  .stat-section-title {
+    font-size: 1rem;
+    color: var(--ice-blue);
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 12px 0;
+    padding: 8px;
+    background: rgba(168, 216, 234, 0.1);
+    border-radius: 6px;
+    transition: all 0.3s;
+  }
+
+  .stat-row:hover {
+    background: rgba(168, 216, 234, 0.2);
+    transform: translateX(-3px);
+  }
+
+  .stat-label {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--ice-blue);
+    text-shadow: 0 0 8px rgba(126, 200, 227, 0.4);
+  }
+
+  .progress-container {
+    margin: 15px 0;
+  }
+
+  .progress-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 20px;
+    background: rgba(13, 21, 32, 0.6);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--ice-blue);
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7ec8e3 0%, #a8d8ea 100%);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(126, 200, 227, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0d1520;
+    font-weight: bold;
+    font-size: 0.8rem;
+  }
+
+  /* =====================================================
+     ACHIEVEMENTS
+     ===================================================== */
+  .achievements {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .achievement {
+    width: 60px;
+    height: 60px;
+    background: rgba(13, 21, 32, 0.6);
+    border: 2px solid rgba(168, 216, 234, 0.3);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .achievement.unlocked {
+    border-color: var(--ice-blue);
+    background: rgba(126, 200, 227, 0.2);
+    animation: unlockPulse 1s ease-out;
+  }
+
+  .achievement.locked {
+    opacity: 0.3;
+    filter: grayscale(1);
+  }
+
+  .achievement:hover {
+    transform: scale(1.1);
+  }
+
+  .achievement-tooltip {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(26, 35, 50, 0.95);
+    border: 1px solid var(--ice-blue);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 10;
+  }
+
+  .achievement:hover .achievement-tooltip {
+    opacity: 1;
+  }
+
+  @keyframes unlockPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); box-shadow: 0 0 20px var(--ice-blue); }
+  }
+
+  /* =====================================================
+     SNOWFLAKE COLLECTOR MINI-GAME
+     ===================================================== */
+  .snowflake-collectible {
+    position: fixed;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 500;
+    animation: float 3s ease-in-out infinite;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .snowflake-collectible:hover {
+    transform: scale(1.3) rotate(180deg);
+    filter: drop-shadow(0 0 10px var(--ice-blue));
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(180deg); }
+  }
+
+  /* =====================================================
+     NOTIFICATION SYSTEM
+     ===================================================== */
+  .notification {
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: linear-gradient(135deg, rgba(126, 200, 227, 0.95), rgba(168, 216, 234, 0.95));
+    color: #0d1520;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    z-index: 10000;
+    opacity: 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .notification.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  noscript {
+    display: block;
+    padding: 20px;
+    background: #ff6b6b;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(26, 35, 50, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 15px 30px;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--ice-blue);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .header h1 {
+    font-size: 1.5rem;
+    color: var(--ice-blue);
+    font-weight: normal;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(126, 200, 227, 0.5);
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn {
+    background: linear-gradient(135deg, #7ec8e3, #a8d8ea);
+    color: #0d1520;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    font-weight: bold;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(126, 200, 227, 0.6);
+  }
+
+  .progress-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #7ec8e3, #a8d8ea);
+    transition: width 0.5s;
+    z-index: 1000;
+    box-shadow: 0 0 10px var(--ice-blue);
+  }
+
+  #transitionOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(26, 47, 69, 0.3) 0%, rgba(13, 21, 32, 0.95) 100%);
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+  }
+
+  #transitionOverlay.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .transition-message {
+    color: var(--ice-blue);
+    font-size: 2rem;
+    text-align: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.6s;
+    text-shadow: 0 0 20px rgba(126, 200, 227, 0.8);
+  }
+
+  #transitionOverlay.active .transition-message {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .cultural-symbols {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    max-width: 600px;
+    opacity: 0;
+    transition: opacity 0.8s 0.3s;
+  }
+
+  #transitionOverlay.active .cultural-symbols {
+    opacity: 1;
+  }
+
+  .symbol {
+    font-size: 2.5rem;
+    animation: symbolFloat 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px rgba(126, 200, 227, 0.6));
+  }
+
+  .symbol:nth-child(1) { animation-delay: 0s; }
+  .symbol:nth-child(2) { animation-delay: 0.2s; }
+  .symbol:nth-child(3) { animation-delay: 0.4s; }
+  .symbol:nth-child(4) { animation-delay: 0.6s; }
+  .symbol:nth-child(5) { animation-delay: 0.8s; }
+  .symbol:nth-child(6) { animation-delay: 1s; }
+  .symbol:nth-child(7) { animation-delay: 1.2s; }
+  .symbol:nth-child(8) { animation-delay: 1.4s; }
+
+  @keyframes symbolFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(10deg); }
+  }
+
+  .cultural-message {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.8s 0.5s;
+    max-width: 500px;
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  #transitionOverlay.active .cultural-message {
+    opacity: 1;
+  }
+
+  .book-stage {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    height: 80vh;
+    max-width: 1400px;
+    max-height: 900px;
+    perspective: 2500px;
+    z-index: 10;
+    transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .book-stage.zoomed-out {
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+
+  .book-stage.zoomed-in {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .book {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform var(--transition-speed);
+  }
+
+  .page {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    right: 0;
+    top: 0;
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    transition: transform var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+      0 10px 40px var(--shadow-book),
+      inset 0 0 20px rgba(168, 216, 234, 0.1);
+  }
+
+  .page.flipped {
+    transform: rotateY(-180deg);
+  }
+
+  .page-front,
+  .page-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    background: var(--paper-light);
+    padding: 60px 50px;
+    overflow-y: auto;
+    box-shadow: inset 0 0 30px rgba(126, 200, 227, 0.05);
+  }
+
+  .page-front {
+    background: linear-gradient(to right, var(--paper-dark) 0%, var(--paper-light) 5%);
+  }
+
+  .page-back {
+    transform: rotateY(180deg);
+    background: linear-gradient(to left, var(--paper-dark) 0%, var(--paper-light) 5%);
+  }
+
+  .spine {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 20px;
+    height: 100%;
+    background: linear-gradient(to right, #2a4560, #3a5570, #2a4560);
+    transform: translateX(-50%);
+    box-shadow: 
+      inset 0 0 10px rgba(0, 0, 0, 0.5),
+      0 0 20px rgba(126, 200, 227, 0.2);
+    z-index: 5;
+  }
+
+  .page-front::before,
+  .page-back::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(126, 200, 227, 0.02) 2px, rgba(126, 200, 227, 0.02) 4px),
+      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(126, 200, 227, 0.02) 2px, rgba(126, 200, 227, 0.02) 4px);
+    pointer-events: none;
+    opacity: 0.3;
+  }
+
+  .page-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #1a2332;
+    text-align: justify;
+  }
+
+  .page-content h2 {
+    font-size: 2rem;
+    color: #2a4560;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: normal;
+    letter-spacing: 3px;
+  }
+
+  .page-content h3 {
+    font-size: 1.5rem;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: #3a5570;
+  }
+
+  .page-content p {
+    margin-bottom: 20px;
+    text-indent: 2em;
+  }
+
+  .page-content p:first-of-type::first-letter {
+    font-size: 3.5rem;
+    font-weight: bold;
+    float: left;
+    line-height: 0.85;
+    margin: 5px 10px 0 0;
+    color: #2a4560;
+  }
+
+  .page-content blockquote {
+    border-left: 3px solid #7ec8e3;
+    padding-left: 20px;
+    margin: 20px 0;
+    font-style: italic;
+    color: #4a6580;
+  }
+
+  .nav-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, rgba(126, 200, 227, 0.9), rgba(168, 216, 234, 0.9));
+    color: #0d1520;
+    border: 2px solid var(--ice-blue);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(126, 200, 227, 0.4);
+  }
+
+  .nav-btn:hover {
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 30px rgba(126, 200, 227, 0.8);
+  }
+
+  .nav-btn.prev {
+    left: 20px;
+  }
+
+  .nav-btn.next {
+    right: 20px;
+  }
+
+  .nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .page-number {
+    position: absolute;
+    bottom: 30px;
+    font-size: 0.9rem;
+    color: #6a8090;
+    font-style: italic;
+  }
+
+  .page-front .page-number {
+    right: 50px;
+  }
+
+  .page-back .page-number {
+    left: 50px;
+  }
+
+  .collapsible {
+    cursor: pointer;
+    padding: 10px;
+    background: rgba(126, 200, 227, 0.1);
+    border-left: 4px solid #7ec8e3;
+    margin: 20px 0;
+    transition: background 0.3s;
+  }
+
+  .collapsible:hover {
+    background: rgba(126, 200, 227, 0.2);
+  }
+
+  .collapsible::before {
+    content: '▶ ';
+    display: inline-block;
+    transition: transform 0.3s;
+  }
+
+  .collapsible.active::before {
+    transform: rotate(90deg);
+  }
+
+  .collapsible-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+  }
+
+  .collapsible-content.active {
+    max-height: 2000px;
+  }
+
+  .footer {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-align: center;
+    z-index: 1000;
+    opacity: 0.7;
+  }
+
+  @media print {
+    body {
+      background: white;
+      color: black;
+    }
+    .header, .nav-btn, .controls, .footer, .progress-bar, #snowCanvas, .frost-overlay, #transitionOverlay, .game-stats {
+      display: none !important;
+    }
+    .book-stage {
+      position: relative;
+      transform: none !important;
+      width: 100%;
+      max-width: none;
+    }
+    .page {
+      position: relative;
+      width: 100%;
+      page-break-after: always;
+    }
+    .page-front, .page-back {
+      position: relative;
+      page-break-after: always;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .game-stats {
+      top: 70px;
+      right: 10px;
+      min-width: 220px;
+      padding: 15px;
+    }
+    .header h1 {
+      font-size: 1rem;
+    }
+    .controls {
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .btn {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+    .book-stage {
+      width: 95vw;
+      height: 70vh;
+    }
+    .page-content {
+      font-size: 0.95rem;
+      padding: 40px 30px;
+    }
+    .nav-btn {
+      width: 50px;
+      height: 50px;
+      font-size: 1.2rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<noscript>
+  <p>⚠️ This book reader requires JavaScript for the interactive experience.</p>
+</noscript>
+
+<!-- WINTER EFFECTS -->
+<canvas id="snowCanvas"></canvas>
+<div class="frost-overlay"></div>
+
+<!-- TRANSITION OVERLAY -->
+<div id="transitionOverlay">
+  <div class="transition-message">✨ Honoring the Return of Light ✨</div>
+  <div class="cultural-symbols">
+    <span class="symbol" title="Yalda (Persian) - Longest Night">🍎</span>
+    <span class="symbol" title="Dong Zhi (Chinese) - Winter Arrival">🥟</span>
+    <span class="symbol" title="Inti Raymi (Incan) - Sun Festival">☀️</span>
+    <span class="symbol" title="Soyal (Hopi) - Prayer & Renewal">🪶</span>
+    <span class="symbol" title="Yule (Nordic) - Wheel of Year">🔥</span>
+    <span class="symbol" title="Tōji (Japanese) - Citrus Bath">🍊</span>
+    <span class="symbol" title="St. Lucia (Scandinavian) - Festival of Lights">🕯️</span>
+    <span class="symbol" title="Makara Sankranti (Hindu) - Harvest">🪁</span>
+  </div>
+  <div class="cultural-message">
+    Celebrating solstice traditions from Persian Yalda to Chinese Dong Zhi, 
+    from Incan Inti Raymi to Hopi Soyal, from Nordic Yule to Japanese Tōji—
+    honoring humanity's timeless reverence for the returning sun
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notification" id="notification"></div>
+
+<header class="header">
+  <h1>❄️ WINTER ARCHIVE QUEST</h1>
+  <div class="controls">
+    <button class="btn" onclick="exportHTML()">💾 Save</button>
+    <button class="btn" onclick="exportPDF()">📄 PDF</button>
+    <button class="btn" onclick="resetProgress()">🔄 Reset</button>
+  </div>
+</header>
+
+<!-- GAMIFICATION PANEL -->
+<div class="game-stats">
+  <h3>⭐ Your Progress</h3>
+  
+  <!-- CURRENCIES -->
+  <div class="currency-grid">
+    <div class="currency-card">
+      <span class="currency-icon">❄️</span>
+      <div class="currency-amount" id="snowflakeCount">0</div>
+      <div class="currency-label">Snowflakes</div>
+    </div>
+    <div class="currency-card">
+      <span class="currency-icon">💎</span>
+      <div class="currency-amount" id="crystalCount">0</div>
+      <div class="currency-label">Ice Crystals</div>
+    </div>
+    <div class="currency-card">
+      <span class="currency-icon">🌟</span>
+      <div class="currency-amount" id="starCount">0</div>
+      <div class="currency-label">Wisdom Stars</div>
+    </div>
+    <div class="currency-card">
+      <span class="currency-icon">🔥</span>
+      <div class="currency-amount" id="hearthCount">0</div>
+      <div class="currency-label">Hearth Flames</div>
+    </div>
+  </div>
+  
+  <!-- STATS SECTION -->
+  <div class="stat-section">
+    <div class="stat-section-title">📊 Statistics</div>
+    <div class="stat-row">
+      <span class="stat-label">📖 Pages Read</span>
+      <span class="stat-value" id="pagesRead">0 / 6</span>
+    </div>
+    
+    <div class="stat-row">
+      <span class="stat-label">⏱️ Reading Time</span>
+      <span class="stat-value" id="readingTime">0m</span>
+    </div>
+    
+    <div class="stat-row">
+      <span class="stat-label">🔥 Streak</span>
+      <span class="stat-value" id="streak">0 days</span>
+    </div>
+  </div>
+  
+  <!-- LEVEL SECTION -->
+  <div class="stat-section">
+    <div class="stat-section-title">⚡ Experience</div>
+    <div class="progress-container">
+      <div class="progress-label">Level Progress</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="levelProgress" style="width: 0%">
+          <span id="levelText">Lvl 1</span>
+        </div>
+      </div>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Total XP</span>
+      <span class="stat-value" id="totalXP">0</span>
+    </div>
+  </div>
+  
+  <!-- ACHIEVEMENTS SECTION -->
+  <div class="stat-section">
+    <div class="stat-section-title">🏆 Achievements</div>
+    <div class="achievements">
+      <div class="achievement locked" data-achievement="first-page">
+        📖
+        <div class="achievement-tooltip">First Page: Read your first page</div>
+      </div>
+      <div class="achievement locked" data-achievement="collector">
+        ❄️
+        <div class="achievement-tooltip">Collector: Catch 10 snowflakes</div>
+      </div>
+      <div class="achievement locked" data-achievement="halfway">
+        🌟
+        <div class="achievement-tooltip">Halfway There: Read 3 pages</div>
+      </div>
+      <div class="achievement locked" data-achievement="completionist">
+        🎓
+        <div class="achievement-tooltip">Completionist: Read all pages</div>
+      </div>
+      <div class="achievement locked" data-achievement="speedster">
+        ⚡
+        <div class="achievement-tooltip">Speedster: Read 3 pages in 5 minutes</div>
+      </div>
+      <div class="achievement locked" data-achievement="explorer">
+        🔍
+        <div class="achievement-tooltip">Explorer: Open all collapsibles</div>
+      </div>
+      <div class="achievement locked" data-achievement="crystal-hunter">
+        💎
+        <div class="achievement-tooltip">Crystal Hunter: Earn 50 Ice Crystals</div>
+      </div>
+      <div class="achievement locked" data-achievement="star-gazer">
+        ✨
+        <div class="achievement-tooltip">Star Gazer: Earn 25 Wisdom Stars</div>
+      </div>
+      <div class="achievement locked" data-achievement="fire-keeper">
+        🔥
+        <div class="achievement-tooltip">Fire Keeper: Maintain 7 day streak</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<button class="nav-btn prev" id="prevBtn" onclick="prevPage()">‹</button>
+<button class="nav-btn next" id="nextBtn" onclick="nextPage()">›</button>
+
+<div class="book-stage" id="bookStage">
+  <div class="book" id="book">
+    <div class="spine"></div>
+
+    <div class="page" id="page1" data-page="1">
+      <div class="page-front">
+        <div class="page-content">
+          <h2>The Beginning</h2>
+          <p>In an age where humanity stood at the crossroads of extinction and enlightenment, a small group of visionaries gathered beneath the ancient oaks of what was once called the "Silicon Valley." They were scientists, artists, indigenous wisdom keepers, and children—united by a single, audacious dream: to heal the living planet.</p>
+          
+          <p>The year was 2025, and Earth bore the scars of centuries of extraction. Rivers ran toxic, forests smoldered, and the great coral cities of the ocean had become ghostly monuments. But in the darkness, seeds of transformation were germinating.</p>
+
+          <h3 class="collapsible">The Five Principles of Restoration</h3>
+          <div class="collapsible-content">
+            <p><strong>1. Reciprocity over Extraction:</strong> Every action must give back more than it takes. The economy of care replaces the economy of theft.</p>
+            
+            <p><strong>2. Mycorrhizal Networks:</strong> Just as fungi connect forest roots in underground intelligence, our systems must weave together knowledge, resources, and communities.</p>
+            
+            <p><strong>3. Regenerative Cycles:</strong> Waste is food. Death is composted into life. Every ending contains the seeds of new beginning.</p>
+            
+            <p><strong>4. Polyphonic Voices:</strong> No single species, culture, or perspective holds all answers. Wisdom emerges from diversity in dialogue.</p>
+            
+            <p><strong>5. Seven-Generation Thinking:</strong> Every decision is measured against its impact on descendants seven generations hence.</p>
+          </div>
+
+          <blockquote>"We do not inherit the Earth from our ancestors; we borrow it from our children." — Ancient Proverb</blockquote>
+        </div>
+        <div class="page-number">1</div>
+      </div>
+      <div class="page-back">
+        <div class="page-content">
+          <h3>The Archive's Origins</h3>
+          <p>The Planetary Restoration Archive began not in a laboratory or government chamber, but in a community garden in Detroit. Dr. Maya Okonkwo, a soil microbiologist who had left academia after witnessing years of knowledge locked behind paywalls, knelt in the earth teaching neighborhood children about compost.</p>
+
+          <p>"See these worms?" she said, holding up a handful of rich black soil teeming with life. "They're eating last week's vegetable scraps and turning them into food for next year's tomatoes. That's the whole economy of nature—transformation, not accumulation."</p>
+
+          <p>One child, seven-year-old Kai Chen, asked: "Why don't the big companies do this?"</p>
+
+          <p>Maya paused. The question hung in the air like a seed waiting for soil. That night, she began writing. Not a research paper locked behind academic gates, but an open letter to the world. She called it "The Reciprocity Manifesto."</p>
+        </div>
+        <div class="page-number">2</div>
+      </div>
+    </div>
+
+    <div class="page" id="page2" data-page="2">
+      <div class="page-front">
+        <div class="page-content">
+          <h2>Chapter One: The Mycelial Network</h2>
+          
+          <p>Within months, Maya's manifesto had been translated into 47 languages and was being read in villages, universities, and indigenous councils worldwide. But it was Kenji Tanaka, a Japanese systems architect who had spent years designing decentralized networks, who saw how to make it real.</p>
+
+          <p>"We don't need a central database," Kenji explained in their first video call, his background showing the glow of Tokyo at night. "We need a living network. Think of how mycelium works—no central brain, but incredible distributed intelligence."</p>
+
+          <h3 class="collapsible">Technical Architecture</h3>
+          <div class="collapsible-content">
+            <p><strong>Distributed Storage:</strong> The Archive lives on thousands of devices. No single point of failure.</p>
+            <p><strong>Offline-First:</strong> Communities with limited connectivity can access and contribute without constant internet.</p>
+          </div>
+        </div>
+        <div class="page-number">3</div>
+      </div>
+      <div class="page-back">
+        <div class="page-content">
+          <h3>The Narrative Shield</h3>
+          
+          <p>"Every database is a story about what matters," Amara explained. "The current ones say: GDP matters. Profit matters. Growth matters. Our archive must tell a different story."</p>
+
+          <h3 class="collapsible">Anti-Inversion Mechanisms</h3>
+          <div class="collapsible-content">
+            <p><strong>Rate Limiting:</strong> No user can extract data faster than a human can read.</p>
+            <p><strong>Consent Layers:</strong> Indigenous knowledge requires explicit consent from source communities.</p>
+          </div>
+        </div>
+        <div class="page-number">4</div>
+      </div>
+    </div>
+
+    <div class="page" id="page3" data-page="3">
+      <div class="page-front">
+        <div class="page-content">
+          <h2>Chapter Two: Stories of Restoration</h2>
+          
+          <p>The Archive wasn't just technical infrastructure—it was a living library of hope in action.</p>
+
+          <h3 class="collapsible">The Mangrove Midwives</h3>
+          <div class="collapsible-content">
+            <p>In Bangladesh, rising seas had swallowed coastal villages. But a collective of women began planting mangroves in patterns taught by elders and confirmed by soil science.</p>
+            <p>Within three years, 40 kilometers of coastline had been restored. Storm surge damage dropped 70%. Fish catches tripled.</p>
+          </div>
+
+          <h3 class="collapsible">The Soil Prophets</h3>
+          <div class="collapsible-content">
+            <p>After a decade of megadroughts and wildfires, California's Central Valley was exhausted. Enter the Soil Prophets—a coalition of regenerative farmers transforming industrial agriculture.</p>
+            <p>Their farms became carbon sinks. Water requirements dropped by 60%. Yields increased.</p>
+          </div>
+        </div>
+        <div class="page-number">5</div>
+      </div>
+      <div class="page-back">
+        <div class="page-content">
+          <h3 class="collapsible">The Coral Gardeners</h3>
+          <div class="collapsible-content">
+            <p>The Great Barrier Reef was dying, bleached white by warming oceans. But in the Philippines, Indonesia, and Caribbean, a network of coral restoration practitioners was learning how to help reefs adapt.</p>
+            <p>They discovered that some coral genotypes were heat-resistant. The Archive became their coordination hub.</p>
+          </div>
+
+          <blockquote>"The Archive didn't give us new knowledge. It helped us remember old knowledge and see it with new eyes."</blockquote>
+        </div>
+        <div class="page-number">6</div>
+      </div>
+    </div>
+
+    <div class="page" id="page4" data-page="4">
+      <div class="page-front">
+        <div class="page-content">
+          <h2>Chapter Three: The Crisis</h2>
+          
+          <p>By 2028, the Archive had grown beyond anyone's projections. Over 200,000 contributors. Documentation of 15,000 restoration projects. But success brought danger.</p>
+
+          <p>A pharmaceutical company attempted to scrape the Archive's ethnobotanical database. A tech billionaire proposed "scaling" with blockchain and a $2 billion valuation.</p>
+
+          <h3 class="collapsible">The Decentralization Deepening</h3>
+          <div class="collapsible-content">
+            <p>The team made radical decisions: The Archive dissolved its nonprofit status and became a protocol—like email or BitTorrent—with no single entity to sue or shut down.</p>
+            <p>Communities were invited to fork the codebase and create localized versions. Each adapted to cultural needs while remaining interoperable.</p>
+          </div>
+        </div>
+        <div class="page-number">7</div>
+      </div>
+      <div class="page-back">
+        <div class="page-content">
+          <h3>The Story Virus</h3>
+          
+          <p>But the most effective defense wasn't technical—it was narrative. Amara created "story viruses"—compelling narratives that reshaped how people thought about knowledge, ownership, and progress.</p>
+
+          <p>One story, <em>"The Last Patent,"</em> imagined a future where someone tried to patent the rain. It spread across social media, translated into 70 languages.</p>
+
+          <blockquote>"You can't fight a story with facts. You fight a story with a better story. The Archive is our better story—and it's true."</blockquote>
+        </div>
+        <div class="page-number">8</div>
+      </div>
+    </div>
+
+    <div class="page" id="page5" data-page="5">
+      <div class="page-front">
+        <div class="page-content">
+          <h2>Chapter Four: Seven Generations</h2>
+          
+          <p>In 2030, the founding team added the <strong>Seven Generations Protocol</strong>. Every project now required contributors to answer: "How will this impact descendants seven generations from now?"</p>
+
+          <h3 class="collapsible">The Children's Council</h3>
+          <div class="collapsible-content">
+            <p>The Protocol's most radical element was the Children's Council—young people (ages 8-15) who reviewed major Archive decisions.</p>
+            <p>"They're closer to the future than we are," Maya explained. "If we're serious about seven-generation thinking, we need voices from the next generation."</p>
+          </div>
+        </div>
+        <div class="page-number">9</div>
+      </div>
+      <div class="page-back">
+        <div class="page-content">
+          <p>The Council blocked several proposals adults thought brilliant. They rejected a geoengineering project because "it treats symptoms, not causes."</p>
+
+          <p>Their most famous decision: requiring that all Archive documentation include sections written for children. "If you can't explain it simply, maybe you don't understand it well enough."</p>
+
+          <blockquote>"Better questions lead to better answers." — Fatima El-Masri</blockquote>
+        </div>
+        <div class="page-number">10</div>
+      </div>
+    </div>
+
+    <div class="page" id="page6" data-page="6">
+      <div class="page-front">
+        <div class="page-content">
+          <h2>Epilogue: An Invitation</h2>
+          
+          <p>This is not a complete story—it cannot be. The Planetary Restoration Archive is still being written, by thousands of hands, in hundreds of languages, across all continents.</p>
+
+          <p>The Archive succeeded not because it was perfect, but because it was humble. It didn't try to be the final answer—it tried to be a good question, asked in a spirit of service.</p>
+
+          <h3 class="collapsible">The Three Principles</h3>
+          <div class="collapsible-content">
+            <p><strong>1. Knowledge as Commons:</strong> Information wants to be free—but also respected, contextualized, and protected.</p>
+            <p><strong>2. Technology as Compost:</strong> Code should decompose and become soil for new growth.</p>
+            <p><strong>3. Restoration as Relationship:</strong> We don't "save" the planet—we remember how to be in right relationship with it.</p>
+          </div>
+
+          <blockquote style="border: none; text-align: center; font-size: 1.2rem; margin: 40px 0;">
+            May your hands remember the texture of soil.<br>
+            May your eyes see the relationships between all beings.<br>
+            May your actions ripple through seven generations.
+          </blockquote>
+        </div>
+        <div class="page-number">11</div>
+      </div>
+      <div class="page-back">
+        <div class="page-content">
+          <h3 style="margin-top: 50px; text-align: center; color: #2a4560;">The End is a Beginning</h3>
+
+          <p style="text-align: center; font-style: italic; margin-top: 30px;">This book was generated by the Archive's Story Engine. It is both documentation and invitation. The stories are real. The future is unwritten. Your move.</p>
+
+          <hr style="margin: 40px 0; border: none; border-top: 2px solid #7ec8e3;">
+
+          <p style="font-size: 0.9rem; text-align: center; margin-top: 30px;">
+            <strong>ATTRIBUTIONS & LICENSES</strong><br>
+            • All code: MIT License<br>
+            • Content: CC BY-SA 4.0<br>
+            • Zero-Harm Technology<br>
+            <br>
+            <strong>Congratulations on completing the quest!</strong><br>
+            You've journeyed through the entire Archive.
+          </p>
+        </div>
+        <div class="page-number">12</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="footer">
+  <p>❄️ Winter Reading Quest • Zero-Harm Technology 🌱</p>
+</footer>
+
+<script>
+  // ===== GAME STATE =====
+  let gameState = {
+    snowflakesCollected: 0,
+    iceCrystals: 0,
+    wisdomStars: 0,
+    hearthFlames: 0,
+    pagesRead: new Set(),
+    collapsiblesOpened: new Set(),
+    achievements: new Set(),
+    level: 1,
+    xp: 0,
+    startTime: Date.now(),
+    lastVisit: null,
+    streak: 0
+  };
+
+  let currentPage = 1;
+  const totalPages = 6;
+  let isAnimating = false;
+  
+  const bookStage = document.getElementById('bookStage');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const progressBar = document.getElementById('progressBar');
+
+  // ===== SNOWFALL ANIMATION =====
+  const snowCanvas = document.getElementById('snowCanvas');
+  const snowCtx = snowCanvas.getContext('2d');
+  let snowflakes = [];
+  
+  function initSnowfall() {
+    snowCanvas.width = window.innerWidth;
+    snowCanvas.height = window.innerHeight;
+    
+    for (let i = 0; i < 150; i++) {
+      snowflakes.push({
+        x: Math.random() * snowCanvas.width,
+        y: Math.random() * snowCanvas.height,
+        radius: Math.random() * 3 + 1,
+        speed: Math.random() * 1 + 0.5,
+        drift: Math.random() * 0.5 - 0.25,
+        opacity: Math.random() * 0.6 + 0.4
+      });
+    }
+    
+    animateSnowfall();
+  }
+  
+  function animateSnowfall() {
+    snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+    
+    snowflakes.forEach(flake => {
+      flake.y += flake.speed;
+      flake.x += flake.drift;
+      
+      if (flake.y > snowCanvas.height) {
+        flake.y = -10;
+        flake.x = Math.random() * snowCanvas.width;
+      }
+      
+      if (flake.x > snowCanvas.width) flake.x = 0;
+      if (flake.x < 0) flake.x = snowCanvas.width;
+      
+      snowCtx.fillStyle = `rgba(255, 255, 255, ${flake.opacity})`;
+      snowCtx.beginPath();
+      snowCtx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
+      snowCtx.fill();
+    });
+    
+    requestAnimationFrame(animateSnowfall);
+  }
+  
+  window.addEventListener('resize', () => {
+    snowCanvas.width = window.innerWidth;
+    snowCanvas.height = window.innerHeight;
+  });
+
+  // ===== COLLECTIBLE SNOWFLAKES =====
+  function spawnCollectibleSnowflake() {
+    const snowflake = document.createElement('div');
+    snowflake.className = 'snowflake-collectible';
+    snowflake.textContent = '❄️';
+    snowflake.style.left = Math.random() * (window.innerWidth - 100) + 'px';
+    snowflake.style.top = Math.random() * (window.innerHeight - 200) + 100 + 'px';
+    
+    snowflake.addEventListener('click', () => {
+      collectSnowflake(snowflake);
+    });
+    
+    document.body.appendChild(snowflake);
+    
+    setTimeout(() => {
+      if (snowflake.parentElement) {
+        snowflake.remove();
+      }
+    }, 8000);
+  }
+  
+  function collectSnowflake(element) {
+    gameState.snowflakesCollected++;
+    gameState.xp += 10;
+    
+    // Bonus currency chance
+    if (Math.random() < 0.3) {
+      gameState.iceCrystals++;
+      showNotification('❄️ Snowflake +10 XP | 💎 Bonus Crystal!');
+    } else {
+      showNotification('❄️ +10 XP!');
+    }
+    
+    element.style.transform = 'scale(2) rotate(720deg)';
+    element.style.opacity = '0';
+    
+    setTimeout(() => element.remove(), 300);
+    
+    updateStats();
+    checkAchievements();
+    saveProgress();
+    
+    if (Math.random() < 0.3) {
+      setTimeout(spawnCollectibleSnowflake, 2000);
+    }
+  }
+  
+  setInterval(spawnCollectibleSnowflake, 5000);
+
+  // ===== NOTIFICATIONS =====
+  function showNotification(message) {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.classList.add('show');
+    
+    setTimeout(() => {
+      notification.classList.remove('show');
+    }, 2000);
+  }
+
+  // ===== ACHIEVEMENTS =====
+  function checkAchievements() {
+    const achievements = [
+      {
+        id: 'first-page',
+        condition: () => gameState.pagesRead.size >= 1,
+        message: '🎉 Achievement: First Page!',
+        xp: 50,
+        currency: { wisdomStars: 1 }
+      },
+      {
+        id: 'collector',
+        condition: () => gameState.snowflakesCollected >= 10,
+        message: '🎉 Achievement: Snowflake Collector!',
+        xp: 100,
+        currency: { iceCrystals: 5 }
+      },
+      {
+        id: 'halfway',
+        condition: () => gameState.pagesRead.size >= 3,
+        message: '🎉 Achievement: Halfway There!',
+        xp: 150,
+        currency: { wisdomStars: 3 }
+      },
+      {
+        id: 'completionist',
+        condition: () => gameState.pagesRead.size >= 6,
+        message: '🎉 Achievement: Completionist!',
+        xp: 300,
+        currency: { wisdomStars: 10, hearthFlames: 5 }
+      },
+      {
+        id: 'speedster',
+        condition: () => {
+          const timeElapsed = (Date.now() - gameState.startTime) / 1000 / 60;
+          return gameState.pagesRead.size >= 3 && timeElapsed <= 5;
+        },
+        message: '🎉 Achievement: Speed Reader!',
+        xp: 200,
+        currency: { hearthFlames: 3 }
+      },
+      {
+        id: 'explorer',
+        condition: () => gameState.collapsiblesOpened.size >= 6,
+        message: '🎉 Achievement: Explorer!',
+        xp: 150,
+        currency: { wisdomStars: 5 }
+      },
+      {
+        id: 'crystal-hunter',
+        condition: () => gameState.iceCrystals >= 50,
+        message: '🎉 Achievement: Crystal Hunter!',
+        xp: 250,
+        currency: { hearthFlames: 5 }
+      },
+      {
+        id: 'star-gazer',
+        condition: () => gameState.wisdomStars >= 25,
+        message: '🎉 Achievement: Star Gazer!',
+        xp: 200,
+        currency: { iceCrystals: 10 }
+      },
+      {
+        id: 'fire-keeper',
+        condition: () => gameState.streak >= 7,
+        message: '🎉 Achievement: Fire Keeper!',
+        xp: 500,
+        currency: { hearthFlames: 20, wisdomStars: 10 }
+      }
+    ];
+    
+    achievements.forEach(achievement => {
+      if (!gameState.achievements.has(achievement.id) && achievement.condition()) {
+        unlockAchievement(achievement.id, achievement.message, achievement.xp, achievement.currency);
+      }
+    });
+  }
+  
+  function unlockAchievement(id, message, xp, currency) {
+    gameState.achievements.add(id);
+    gameState.xp += xp;
+    
+    // Award currency bonuses
+    if (currency) {
+      if (currency.snowflakes) gameState.snowflakesCollected += currency.snowflakes;
+      if (currency.iceCrystals) gameState.iceCrystals += currency.iceCrystals;
+      if (currency.wisdomStars) gameState.wisdomStars += currency.wisdomStars;
+      if (currency.hearthFlames) gameState.hearthFlames += currency.hearthFlames;
+    }
+    
+    const element = document.querySelector(`[data-achievement="${id}"]`);
+    if (element) {
+      element.classList.remove('locked');
+      element.classList.add('unlocked');
+    }
+    
+    showNotification(message);
+    updateStats();
+    saveProgress();
+  }
+
+  // ===== STATS UPDATE =====
+  function updateStats() {
+    // Update currencies
+    document.getElementById('snowflakeCount').textContent = gameState.snowflakesCollected;
+    document.getElementById('crystalCount').textContent = gameState.iceCrystals;
+    document.getElementById('starCount').textContent = gameState.wisdomStars;
+    document.getElementById('hearthCount').textContent = gameState.hearthFlames;
+    
+    // Update stats
+    document.getElementById('pagesRead').textContent = `${gameState.pagesRead.size} / 6`;
+    
+    const timeElapsed = Math.floor((Date.now() - gameState.startTime) / 1000 / 60);
+    document.getElementById('readingTime').textContent = `${timeElapsed}m`;
+    
+    document.getElementById('streak').textContent = `${gameState.streak} days`;
+    
+    // Level calculation
+    const xpPerLevel = 200;
+    gameState.level = Math.floor(gameState.xp / xpPerLevel) + 1;
+    const xpInCurrentLevel = gameState.xp % xpPerLevel;
+    const progress = (xpInCurrentLevel / xpPerLevel) * 100;
+    
+    document.getElementById('levelProgress').style.width = `${progress}%`;
+    document.getElementById('levelText').textContent = `Lvl ${gameState.level}`;
+    document.getElementById('totalXP').textContent = gameState.xp;
+  }
+
+  // ===== PERSISTENCE =====
+  function saveProgress() {
+    const saveData = {
+      ...gameState,
+      pagesRead: Array.from(gameState.pagesRead),
+      collapsiblesOpened: Array.from(gameState.collapsiblesOpened),
+      achievements: Array.from(gameState.achievements),
+      lastVisit: new Date().toDateString()
+    };
+    localStorage.setItem('winterBookQuest', JSON.stringify(saveData));
+  }
+  
+  function loadProgress() {
+    const saved = localStorage.getItem('winterBookQuest');
+    if (saved) {
+      const data = JSON.parse(saved);
+      gameState = {
+        ...data,
+        pagesRead: new Set(data.pagesRead),
+        collapsiblesOpened: new Set(data.collapsiblesOpened),
+        achievements: new Set(data.achievements)
+      };
+      
+      // Check streak
+      const lastVisit = new Date(data.lastVisit);
+      const today = new Date();
+      const daysDiff = Math.floor((today - lastVisit) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff === 1) {
+        gameState.streak++;
+      } else if (daysDiff > 1) {
+        gameState.streak = 1;
+      }
+      
+      // Restore achievements UI
+      gameState.achievements.forEach(id => {
+        const element = document.querySelector(`[data-achievement="${id}"]`);
+        if (element) {
+          element.classList.remove('locked');
+          element.classList.add('unlocked');
+        }
+      });
+      
+      updateStats();
+    }
+  }
+  
+  function resetProgress() {
+    if (confirm('Reset all progress? This cannot be undone.')) {
+      localStorage.removeItem('winterBookQuest');
+      location.reload();
+    }
+  }
+
+  // ===== PAGE TRANSITIONS =====
+  const transitionOverlay = document.getElementById('transitionOverlay');
+  
+  function showTransition(callback) {
+    transitionOverlay.classList.add('active');
+    
+    setTimeout(() => {
+      if (callback) callback();
+      
+      setTimeout(() => {
+        transitionOverlay.classList.remove('active');
+      }, 800);
+    }, 600);
+  }
+
+  function nextPage() {
+    if (isAnimating || currentPage >= totalPages) return;
+    
+    isAnimating = true;
+    gameState.pagesRead.add(currentPage);
+    gameState.xp += 20;
+    gameState.wisdomStars += 1; // Earn wisdom stars for reading
+    gameState.hearthFlames += Math.floor(gameState.streak / 3); // Bonus flames for streaks
+    
+    showTransition(() => {
+      bookStage.classList.add('zoomed-out');
+      
+      setTimeout(() => {
+        const page = document.getElementById(`page${currentPage}`);
+        page.classList.add('flipped');
+        
+        currentPage++;
+        
+        setTimeout(() => {
+          bookStage.classList.remove('zoomed-out');
+          bookStage.classList.add('zoomed-in');
+          
+          setTimeout(() => {
+            isAnimating = false;
+            updatePageDisplay();
+            updateStats();
+            checkAchievements();
+            saveProgress();
+          }, 600);
+        }, 1200);
+      }, 100);
+    });
+  }
+  
+  function prevPage() {
+    if (isAnimating || currentPage <= 1) return;
+    
+    isAnimating = true;
+    
+    showTransition(() => {
+      bookStage.classList.add('zoomed-out');
+      
+      setTimeout(() => {
+        currentPage--;
+        const page = document.getElementById(`page${currentPage}`);
+        page.classList.remove('flipped');
+        
+        setTimeout(() => {
+          bookStage.classList.remove('zoomed-out');
+          bookStage.classList.add('zoomed-in');
+          
+          setTimeout(() => {
+            isAnimating = false;
+            updatePageDisplay();
+          }, 600);
+        }, 1200);
+      }, 100);
+    });
+  }
+
+  function updatePageDisplay() {
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage === totalPages;
+    
+    const progress = (currentPage / totalPages) * 100;
+    progressBar.style.width = `${progress}%`;
+  }
+
+  // ===== COLLAPSIBLES =====
+  function initCollapsibles() {
+    const collapsibles = document.querySelectorAll('.collapsible');
+    
+    collapsibles.forEach((collapsible, index) => {
+      collapsible.addEventListener('click', function() {
+        this.classList.toggle('active');
+        const content = this.nextElementSibling;
+        content.classList.toggle('active');
+        
+        if (this.classList.contains('active')) {
+          gameState.collapsiblesOpened.add(index);
+          gameState.xp += 5;
+          gameState.wisdomStars += 1; // Reward curiosity with wisdom
+          updateStats();
+          checkAchievements();
+          saveProgress();
+        }
+      });
+    });
+  }
+
+  // ===== KEYBOARD NAV =====
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') prevPage();
+    else if (e.key === 'ArrowRight') nextPage();
+  });
+
+  // ===== EXPORTS =====
+  function exportHTML() {
+    const htmlContent = document.documentElement.outerHTML;
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'winter-book-quest.html';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  
+  function exportPDF() {
+    window.print();
+  }
+
+  // ===== INITIALIZATION =====
+  function init() {
+    loadProgress();
+    initSnowfall();
+    initCollapsibles();
+    updatePageDisplay();
+    updateStats();
+    bookStage.classList.add('zoomed-in');
+    
+    setTimeout(spawnCollectibleSnowflake, 3000);
+    
+    setInterval(updateStats, 60000); // Update time every minute
+    
+    console.log('%c❄️ Winter Book Quest', 'font-size: 20px; color: #7ec8e3;');
+    console.log('%cCollect snowflakes, unlock achievements, level up!', 'color: #b8d4e0;');
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>
+
+</body>
+</html>
