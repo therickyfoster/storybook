@@ -65,44 +65,114 @@
   }
 
   /* =====================================================
-     GAMIFICATION PANEL
+     GAMIFICATION PANEL - COLLAPSIBLE OVERLAY
      ===================================================== */
   .game-stats {
     position: fixed;
     top: 80px;
     right: 20px;
-    background: rgba(26, 35, 50, 0.95);
+    background: rgba(26, 35, 50, 0.98);
     backdrop-filter: blur(10px);
     border: 2px solid var(--ice-blue);
     border-radius: 12px;
-    padding: 20px;
+    padding: 0;
     z-index: 1000;
     min-width: 300px;
     max-height: 85vh;
-    overflow-y: auto;
+    overflow: hidden;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
   }
 
-  .game-stats::-webkit-scrollbar {
-    width: 8px;
+  .game-stats.collapsed {
+    min-width: 60px;
+    max-height: 60px;
+    border-radius: 30px;
   }
 
-  .game-stats::-webkit-scrollbar-track {
+  .stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
     background: rgba(13, 21, 32, 0.6);
-    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-bottom: 1px solid rgba(126, 200, 227, 0.3);
   }
 
-  .game-stats::-webkit-scrollbar-thumb {
-    background: var(--ice-blue);
-    border-radius: 4px;
+  .stats-header:hover {
+    background: rgba(13, 21, 32, 0.8);
+  }
+
+  .game-stats.collapsed .stats-header {
+    border-bottom: none;
+    padding: 15px;
+    justify-content: center;
   }
 
   .game-stats h3 {
     color: var(--ice-blue);
-    margin-bottom: 15px;
     font-size: 1.3rem;
-    text-align: center;
     text-shadow: 0 0 10px rgba(126, 200, 227, 0.5);
+    transition: opacity 0.2s;
+  }
+
+  .game-stats.collapsed h3 {
+    opacity: 0;
+    position: absolute;
+  }
+
+  .collapse-toggle {
+    font-size: 1.5rem;
+    color: var(--ice-blue);
+    transition: transform 0.3s;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .game-stats.collapsed .collapse-toggle {
+    transform: rotate(180deg);
+  }
+
+  .stats-body {
+    padding: 20px;
+    max-height: calc(85vh - 60px);
+    overflow-y: auto;
+    transition: all 0.3s;
+  }
+
+  .game-stats.collapsed .stats-body {
+    max-height: 0;
+    padding: 0;
+    opacity: 0;
+  }
+
+  .game-stats::-webkit-scrollbar,
+  .stats-body::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .game-stats::-webkit-scrollbar-track,
+  .stats-body::-webkit-scrollbar-track {
+    background: rgba(13, 21, 32, 0.6);
+    border-radius: 4px;
+  }
+
+  .game-stats::-webkit-scrollbar-thumb,
+  .stats-body::-webkit-scrollbar-thumb {
+    background: var(--ice-blue);
+    border-radius: 4px;
+  }
+
+  .collapsed-preview {
+    display: none;
+    font-size: 1.8rem;
+    text-align: center;
+  }
+
+  .game-stats.collapsed .collapsed-preview {
+    display: block;
   }
 
   .currency-grid {
@@ -285,6 +355,334 @@
   @keyframes unlockPulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.2); box-shadow: 0 0 20px var(--ice-blue); }
+  }
+
+  /* =====================================================
+     DECISION MODAL
+     ===================================================== */
+  .decision-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(13, 21, 32, 0.95);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+
+  .decision-modal.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .decision-content {
+    background: linear-gradient(135deg, rgba(26, 35, 50, 0.98), rgba(42, 69, 96, 0.98));
+    border: 3px solid var(--ice-blue);
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    transform: scale(0.8);
+    transition: transform 0.4s;
+  }
+
+  .decision-modal.active .decision-content {
+    transform: scale(1);
+  }
+
+  .decision-title {
+    font-size: 2rem;
+    color: var(--ice-blue);
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 0 0 15px rgba(126, 200, 227, 0.6);
+  }
+
+  .decision-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-primary);
+    margin-bottom: 30px;
+    text-align: center;
+  }
+
+  .decision-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .choice-btn {
+    background: linear-gradient(135deg, rgba(126, 200, 227, 0.2), rgba(168, 216, 234, 0.2));
+    border: 2px solid var(--ice-blue);
+    color: var(--text-primary);
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: left;
+    position: relative;
+  }
+
+  .choice-btn:hover {
+    background: linear-gradient(135deg, rgba(126, 200, 227, 0.4), rgba(168, 216, 234, 0.4));
+    transform: translateX(10px);
+    box-shadow: 0 5px 20px rgba(126, 200, 227, 0.4);
+  }
+
+  .choice-icon {
+    font-size: 1.5rem;
+    margin-right: 10px;
+  }
+
+  .choice-reward {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--ice-blue);
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  /* =====================================================
+     SHOP MODAL
+     ===================================================== */
+  .shop-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(13, 21, 32, 0.95);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+    overflow-y: auto;
+  }
+
+  .shop-modal.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .shop-content {
+    background: linear-gradient(135deg, rgba(26, 35, 50, 0.98), rgba(42, 69, 96, 0.98));
+    border: 3px solid var(--ice-blue);
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    transform: scale(0.8);
+    transition: transform 0.4s;
+  }
+
+  .shop-modal.active .shop-content {
+    transform: scale(1);
+  }
+
+  .shop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+  }
+
+  .shop-title {
+    font-size: 2rem;
+    color: var(--ice-blue);
+    text-shadow: 0 0 15px rgba(126, 200, 227, 0.6);
+  }
+
+  .shop-close {
+    background: rgba(255, 100, 100, 0.3);
+    border: 2px solid #ff6464;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .shop-close:hover {
+    background: rgba(255, 100, 100, 0.6);
+    transform: rotate(90deg);
+  }
+
+  .shop-balance {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 30px;
+    padding: 15px;
+    background: rgba(13, 21, 32, 0.6);
+    border-radius: 10px;
+  }
+
+  .balance-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+  }
+
+  .balance-icon {
+    font-size: 1.5rem;
+  }
+
+  .balance-amount {
+    color: var(--ice-blue);
+    font-weight: bold;
+  }
+
+  .shop-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .shop-item {
+    background: rgba(13, 21, 32, 0.6);
+    border: 2px solid rgba(126, 200, 227, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+
+  .shop-item:hover {
+    border-color: var(--ice-blue);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(126, 200, 227, 0.3);
+  }
+
+  .shop-item.owned {
+    border-color: #50fa7b;
+    background: rgba(80, 250, 123, 0.1);
+  }
+
+  .shop-item.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .item-icon {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .item-name {
+    font-size: 1.2rem;
+    color: var(--ice-blue);
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+
+  .item-description {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 15px;
+    line-height: 1.5;
+  }
+
+  .item-price {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 10px;
+  }
+
+  .price-tag {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.95rem;
+  }
+
+  .item-effect {
+    font-size: 0.85rem;
+    color: #50fa7b;
+    text-align: center;
+    font-style: italic;
+  }
+
+  .shop-btn {
+    background: linear-gradient(135deg, #7ec8e3, #a8d8ea);
+    color: #0d1520;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .shop-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(126, 200, 227, 0.5);
+  }
+
+  .shop-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* =====================================================
+     POWERUP INDICATORS
+     ===================================================== */
+  .active-powerups {
+    position: fixed;
+    bottom: 60px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+  }
+
+  .powerup-indicator {
+    background: rgba(26, 35, 50, 0.95);
+    border: 2px solid var(--ice-blue);
+    border-radius: 8px;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: powerupPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes powerupPulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(126, 200, 227, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(126, 200, 227, 0.6); }
+  }
+
+  .powerup-icon {
+    font-size: 1.5rem;
+  }
+
+  .powerup-text {
+    font-size: 0.9rem;
+    color: var(--text-primary);
   }
 
   /* =====================================================
@@ -834,112 +1232,165 @@
 </header>
 
 <!-- GAMIFICATION PANEL -->
-<div class="game-stats">
-  <h3>⭐ Your Progress</h3>
-  
-  <!-- CURRENCIES -->
-  <div class="currency-grid">
-    <div class="currency-card">
-      <span class="currency-icon">❄️</span>
-      <div class="currency-amount" id="snowflakeCount">0</div>
-      <div class="currency-label">Snowflakes</div>
-    </div>
-    <div class="currency-card">
-      <span class="currency-icon">💎</span>
-      <div class="currency-amount" id="crystalCount">0</div>
-      <div class="currency-label">Ice Crystals</div>
-    </div>
-    <div class="currency-card">
-      <span class="currency-icon">🌟</span>
-      <div class="currency-amount" id="starCount">0</div>
-      <div class="currency-label">Wisdom Stars</div>
-    </div>
-    <div class="currency-card">
-      <span class="currency-icon">🔥</span>
-      <div class="currency-amount" id="hearthCount">0</div>
-      <div class="currency-label">Hearth Flames</div>
-    </div>
+<div class="game-stats" id="gameStats">
+  <div class="stats-header" onclick="toggleStats()">
+    <h3>⭐ Your Progress</h3>
+    <span class="collapse-toggle">◀</span>
+    <div class="collapsed-preview">📊</div>
   </div>
   
-  <!-- STATS SECTION -->
-  <div class="stat-section">
-    <div class="stat-section-title">📊 Statistics</div>
-    <div class="stat-row">
-      <span class="stat-label">📖 Pages Read</span>
-      <span class="stat-value" id="pagesRead">0 / 6</span>
+  <div class="stats-body">
+    <!-- CURRENCIES -->
+    <div class="currency-grid">
+      <div class="currency-card">
+        <span class="currency-icon">❄️</span>
+        <div class="currency-amount" id="snowflakeCount">0</div>
+        <div class="currency-label">Snowflakes</div>
+      </div>
+      <div class="currency-card">
+        <span class="currency-icon">💎</span>
+        <div class="currency-amount" id="crystalCount">0</div>
+        <div class="currency-label">Ice Crystals</div>
+      </div>
+      <div class="currency-card">
+        <span class="currency-icon">🌟</span>
+        <div class="currency-amount" id="starCount">0</div>
+        <div class="currency-label">Wisdom Stars</div>
+      </div>
+      <div class="currency-card">
+        <span class="currency-icon">🔥</span>
+        <div class="currency-amount" id="hearthCount">0</div>
+        <div class="currency-label">Hearth Flames</div>
+      </div>
     </div>
     
-    <div class="stat-row">
-      <span class="stat-label">⏱️ Reading Time</span>
-      <span class="stat-value" id="readingTime">0m</span>
+    <!-- STATS SECTION -->
+    <div class="stat-section">
+      <div class="stat-section-title">📊 Statistics</div>
+      <div class="stat-row">
+        <span class="stat-label">📖 Pages Read</span>
+        <span class="stat-value" id="pagesRead">0 / 6</span>
+      </div>
+      
+      <div class="stat-row">
+        <span class="stat-label">⏱️ Reading Time</span>
+        <span class="stat-value" id="readingTime">0m</span>
+      </div>
+      
+      <div class="stat-row">
+        <span class="stat-label">🔥 Streak</span>
+        <span class="stat-value" id="streak">0 days</span>
+      </div>
     </div>
     
-    <div class="stat-row">
-      <span class="stat-label">🔥 Streak</span>
-      <span class="stat-value" id="streak">0 days</span>
+    <!-- LEVEL SECTION -->
+    <div class="stat-section">
+      <div class="stat-section-title">⚡ Experience</div>
+      <div class="progress-container">
+        <div class="progress-label">Level Progress</div>
+        <div class="progress-track">
+          <div class="progress-fill" id="levelProgress" style="width: 0%">
+            <span id="levelText">Lvl 1</span>
+          </div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Total XP</span>
+        <span class="stat-value" id="totalXP">0</span>
+      </div>
     </div>
-  </div>
-  
-  <!-- LEVEL SECTION -->
-  <div class="stat-section">
-    <div class="stat-section-title">⚡ Experience</div>
-    <div class="progress-container">
-      <div class="progress-label">Level Progress</div>
-      <div class="progress-track">
-        <div class="progress-fill" id="levelProgress" style="width: 0%">
-          <span id="levelText">Lvl 1</span>
+    
+    <!-- ACHIEVEMENTS SECTION -->
+    <div class="stat-section">
+      <div class="stat-section-title">🏆 Achievements</div>
+      <div class="achievements">
+        <div class="achievement locked" data-achievement="first-page">
+          📖
+          <div class="achievement-tooltip">First Page: Read your first page</div>
+        </div>
+        <div class="achievement locked" data-achievement="collector">
+          ❄️
+          <div class="achievement-tooltip">Collector: Catch 10 snowflakes</div>
+        </div>
+        <div class="achievement locked" data-achievement="halfway">
+          🌟
+          <div class="achievement-tooltip">Halfway There: Read 3 pages</div>
+        </div>
+        <div class="achievement locked" data-achievement="completionist">
+          🎓
+          <div class="achievement-tooltip">Completionist: Read all pages</div>
+        </div>
+        <div class="achievement locked" data-achievement="speedster">
+          ⚡
+          <div class="achievement-tooltip">Speedster: Read 3 pages in 5 minutes</div>
+        </div>
+        <div class="achievement locked" data-achievement="explorer">
+          🔍
+          <div class="achievement-tooltip">Explorer: Open all collapsibles</div>
+        </div>
+        <div class="achievement locked" data-achievement="crystal-hunter">
+          💎
+          <div class="achievement-tooltip">Crystal Hunter: Earn 50 Ice Crystals</div>
+        </div>
+        <div class="achievement locked" data-achievement="star-gazer">
+          ✨
+          <div class="achievement-tooltip">Star Gazer: Earn 25 Wisdom Stars</div>
+        </div>
+        <div class="achievement locked" data-achievement="fire-keeper">
+          🔥
+          <div class="achievement-tooltip">Fire Keeper: Maintain 7 day streak</div>
         </div>
       </div>
     </div>
-    <div class="stat-row">
-      <span class="stat-label">Total XP</span>
-      <span class="stat-value" id="totalXP">0</span>
-    </div>
-  </div>
-  
-  <!-- ACHIEVEMENTS SECTION -->
-  <div class="stat-section">
-    <div class="stat-section-title">🏆 Achievements</div>
-    <div class="achievements">
-      <div class="achievement locked" data-achievement="first-page">
-        📖
-        <div class="achievement-tooltip">First Page: Read your first page</div>
-      </div>
-      <div class="achievement locked" data-achievement="collector">
-        ❄️
-        <div class="achievement-tooltip">Collector: Catch 10 snowflakes</div>
-      </div>
-      <div class="achievement locked" data-achievement="halfway">
-        🌟
-        <div class="achievement-tooltip">Halfway There: Read 3 pages</div>
-      </div>
-      <div class="achievement locked" data-achievement="completionist">
-        🎓
-        <div class="achievement-tooltip">Completionist: Read all pages</div>
-      </div>
-      <div class="achievement locked" data-achievement="speedster">
-        ⚡
-        <div class="achievement-tooltip">Speedster: Read 3 pages in 5 minutes</div>
-      </div>
-      <div class="achievement locked" data-achievement="explorer">
-        🔍
-        <div class="achievement-tooltip">Explorer: Open all collapsibles</div>
-      </div>
-      <div class="achievement locked" data-achievement="crystal-hunter">
-        💎
-        <div class="achievement-tooltip">Crystal Hunter: Earn 50 Ice Crystals</div>
-      </div>
-      <div class="achievement locked" data-achievement="star-gazer">
-        ✨
-        <div class="achievement-tooltip">Star Gazer: Earn 25 Wisdom Stars</div>
-      </div>
-      <div class="achievement locked" data-achievement="fire-keeper">
-        🔥
-        <div class="achievement-tooltip">Fire Keeper: Maintain 7 day streak</div>
-      </div>
-    </div>
+    
+    <button class="btn" onclick="openShop()" style="width: 100%; margin-top: 15px;">
+      🏪 Open Shop
+    </button>
   </div>
 </div>
+
+<!-- DECISION MODAL -->
+<div class="decision-modal" id="decisionModal">
+  <div class="decision-content">
+    <h2 class="decision-title" id="decisionTitle">⚡ A Choice Appears</h2>
+    <p class="decision-text" id="decisionText"></p>
+    <div class="decision-choices" id="decisionChoices"></div>
+  </div>
+</div>
+
+<!-- SHOP MODAL -->
+<div class="shop-modal" id="shopModal">
+  <div class="shop-content">
+    <div class="shop-header">
+      <h2 class="shop-title">🏪 Winter Merchant's Shop</h2>
+      <button class="shop-close" onclick="closeShop()">×</button>
+    </div>
+    
+    <div class="shop-balance">
+      <div class="balance-item">
+        <span class="balance-icon">❄️</span>
+        <span class="balance-amount" id="shopSnowflakes">0</span>
+      </div>
+      <div class="balance-item">
+        <span class="balance-icon">💎</span>
+        <span class="balance-amount" id="shopCrystals">0</span>
+      </div>
+      <div class="balance-item">
+        <span class="balance-icon">🌟</span>
+        <span class="balance-amount" id="shopStars">0</span>
+      </div>
+      <div class="balance-item">
+        <span class="balance-icon">🔥</span>
+        <span class="balance-amount" id="shopFlames">0</span>
+      </div>
+    </div>
+    
+    <div class="shop-items" id="shopItems"></div>
+  </div>
+</div>
+
+<!-- ACTIVE POWERUPS -->
+<div class="active-powerups" id="activePowerups"></div>
 
 <div class="progress-bar" id="progressBar"></div>
 
@@ -1179,11 +1630,215 @@
     pagesRead: new Set(),
     collapsiblesOpened: new Set(),
     achievements: new Set(),
+    decisions: {},
+    inventory: [],
+    activePowerups: [],
+    shopUnlocked: false,
     level: 1,
     xp: 0,
     startTime: Date.now(),
     lastVisit: null,
     streak: 0
+  };
+
+  // Story decisions that affect the narrative
+  const storyDecisions = {
+    page1: {
+      title: "🌱 The Garden's Question",
+      text: "Maya looks at you and asks: 'Will you help us build a world of reciprocity, or continue extracting from the earth?' How do you respond?",
+      choices: [
+        {
+          text: "🤝 'I choose reciprocity and collaboration'",
+          icon: "🤝",
+          reward: "Unlock Collaboration Path • +20 Wisdom Stars • +10 Ice Crystals",
+          effect: () => {
+            gameState.wisdomStars += 20;
+            gameState.iceCrystals += 10;
+            gameState.decisions.page1 = 'reciprocity';
+            gameState.shopUnlocked = true;
+            showNotification("🌟 Shop Unlocked! Path of Reciprocity chosen!");
+          }
+        },
+        {
+          text: "⚡ 'I'll find a middle path—reform, not revolution'",
+          icon: "⚡",
+          reward: "Unlock Reform Path • +15 Wisdom Stars • +5 Hearth Flames",
+          effect: () => {
+            gameState.wisdomStars += 15;
+            gameState.hearthFlames += 5;
+            gameState.decisions.page1 = 'reform';
+            gameState.shopUnlocked = true;
+            showNotification("⚡ Shop Unlocked! Path of Reform chosen!");
+          }
+        }
+      ]
+    },
+    page3: {
+      title: "🌊 The Restoration Challenge",
+      text: "You witness three restoration projects: Mangroves, Soil, and Coral. Which resonates most with your heart?",
+      choices: [
+        {
+          text: "🌊 'The Mangrove Midwives inspire me'",
+          icon: "🌊",
+          reward: "+25 Ice Crystals • Water Affinity Unlocked",
+          effect: () => {
+            gameState.iceCrystals += 25;
+            gameState.decisions.page3 = 'mangrove';
+            unlockShopItem('water-blessing');
+            showNotification("🌊 Water Affinity Unlocked!");
+          }
+        },
+        {
+          text: "🌾 'The Soil Prophets speak to me'",
+          icon: "🌾",
+          reward: "+20 Wisdom Stars • Earth Affinity Unlocked",
+          effect: () => {
+            gameState.wisdomStars += 20;
+            gameState.decisions.page3 = 'soil';
+            unlockShopItem('earth-roots');
+            showNotification("🌾 Earth Affinity Unlocked!");
+          }
+        },
+        {
+          text: "🪸 'The Coral Gardeners call to me'",
+          icon: "🪸",
+          reward: "+15 Hearth Flames • Ocean Affinity Unlocked",
+          effect: () => {
+            gameState.hearthFlames += 15;
+            gameState.decisions.page3 = 'coral';
+            unlockShopItem('coral-wisdom');
+            showNotification("🪸 Ocean Affinity Unlocked!");
+          }
+        }
+      ]
+    },
+    page5: {
+      title: "⏳ Seven Generations",
+      text: "The Children's Council asks: 'What legacy will you leave for the future?' What do you promise?",
+      choices: [
+        {
+          text: "🌳 'I will plant forests for those unborn'",
+          icon: "🌳",
+          reward: "+30 Wisdom Stars • Future Vision Unlocked",
+          effect: () => {
+            gameState.wisdomStars += 30;
+            gameState.decisions.page5 = 'forests';
+            unlockShopItem('time-sight');
+            showNotification("🌳 Future Vision Unlocked!");
+          }
+        },
+        {
+          text: "📚 'I will preserve and share knowledge freely'",
+          icon: "📚",
+          reward: "+40 Ice Crystals • Knowledge Keeper Unlocked",
+          effect: () => {
+            gameState.iceCrystals += 40;
+            gameState.decisions.page5 = 'knowledge';
+            unlockShopItem('archive-key');
+            showNotification("📚 Knowledge Keeper Unlocked!");
+          }
+        },
+        {
+          text: "🔥 'I will tend the hearth of community'",
+          icon: "🔥",
+          reward: "+25 Hearth Flames • Community Guardian Unlocked",
+          effect: () => {
+            gameState.hearthFlames += 25;
+            gameState.decisions.page5 = 'community';
+            unlockShopItem('hearth-keeper');
+            showNotification("🔥 Community Guardian Unlocked!");
+          }
+        }
+      ]
+    }
+  };
+
+  // Shop items and powerups
+  const shopInventory = {
+    'xp-boost': {
+      name: "Winter's Wisdom",
+      icon: "📚",
+      description: "Double XP from all sources for 10 minutes",
+      price: { snowflakes: 50, crystals: 10 },
+      effect: "2x XP for 10min",
+      duration: 600000,
+      unlocked: true,
+      powerup: true
+    },
+    'snowflake-magnet': {
+      name: "Snowflake Magnet",
+      icon: "🧲",
+      description: "Collectible snowflakes appear 3x more frequently",
+      price: { snowflakes: 100, stars: 5 },
+      effect: "3x Snowflake Spawn",
+      duration: 600000,
+      unlocked: true,
+      powerup: true
+    },
+    'crystal-luck': {
+      name: "Crystal Fortune",
+      icon: "✨",
+      description: "100% chance to get bonus crystals from snowflakes",
+      price: { crystals: 30, flames: 5 },
+      effect: "Guaranteed Crystals",
+      duration: 300000,
+      unlocked: true,
+      powerup: true
+    },
+    'water-blessing': {
+      name: "Blessing of Tides",
+      icon: "🌊",
+      description: "Permanent +20% currency gain from all sources",
+      price: { crystals: 100, stars: 20 },
+      effect: "+20% All Currency",
+      permanent: true,
+      unlocked: false
+    },
+    'earth-roots': {
+      name: "Deep Roots",
+      icon: "🌱",
+      description: "Reading pages grants double Wisdom Stars",
+      price: { stars: 50, flames: 10 },
+      effect: "2x Wisdom Stars",
+      permanent: true,
+      unlocked: false
+    },
+    'coral-wisdom': {
+      name: "Coral's Memory",
+      icon: "🪸",
+      description: "Maintain streak bonus even if you miss a day",
+      price: { flames: 30, crystals: 50 },
+      effect: "Streak Protection",
+      permanent: true,
+      unlocked: false
+    },
+    'time-sight': {
+      name: "Seven-Generation Sight",
+      icon: "👁️",
+      description: "Reveal all future decision rewards before choosing",
+      price: { stars: 100, flames: 20 },
+      effect: "See All Paths",
+      permanent: true,
+      unlocked: false
+    },
+    'archive-key': {
+      name: "Archive Master Key",
+      icon: "🗝️",
+      description: "Unlock all collapsibles permanently and gain +50 XP each",
+      price: { crystals: 150, stars: 75 },
+      effect: "Auto-Unlock Content",
+      permanent: true,
+      unlocked: false
+    },
+    'hearth-keeper': {
+      name: "Eternal Hearth",
+      icon: "🔥",
+      description: "Gain 1 Hearth Flame per page read (instead of streak-based)",
+      price: { flames: 50, stars: 50 },
+      effect: "Flame Per Page",
+      permanent: true,
+      unlocked: false
+    }
   };
 
   let currentPage = 1;
@@ -1194,6 +1849,23 @@
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
   const progressBar = document.getElementById('progressBar');
+
+  // ===== STATS PANEL TOGGLE =====
+  function toggleStats() {
+    const panel = document.getElementById('gameStats');
+    panel.classList.toggle('collapsed');
+    
+    // Save preference
+    const isCollapsed = panel.classList.contains('collapsed');
+    localStorage.setItem('statsCollapsed', isCollapsed);
+  }
+  
+  function loadStatsPanelState() {
+    const isCollapsed = localStorage.getItem('statsCollapsed') === 'true';
+    if (isCollapsed) {
+      document.getElementById('gameStats').classList.add('collapsed');
+    }
+  }
 
   // ===== SNOWFALL ANIMATION =====
   const snowCanvas = document.getElementById('snowCanvas');
@@ -1270,14 +1942,22 @@
   
   function collectSnowflake(element) {
     gameState.snowflakesCollected++;
-    gameState.xp += 10;
+    
+    let xpGain = 10;
+    if (hasPowerup('xp-boost')) xpGain *= 2;
+    if (hasItem('water-blessing')) xpGain = Math.ceil(xpGain * 1.2);
+    
+    gameState.xp += xpGain;
     
     // Bonus currency chance
-    if (Math.random() < 0.3) {
-      gameState.iceCrystals++;
-      showNotification('❄️ Snowflake +10 XP | 💎 Bonus Crystal!');
+    const crystalChance = hasPowerup('crystal-luck') ? 1.0 : 0.3;
+    if (Math.random() < crystalChance) {
+      let crystalGain = 1;
+      if (hasItem('water-blessing')) crystalGain = Math.ceil(crystalGain * 1.2);
+      gameState.iceCrystals += crystalGain;
+      showNotification(`❄️ Snowflake +${xpGain} XP | 💎 Bonus Crystal!`);
     } else {
-      showNotification('❄️ +10 XP!');
+      showNotification(`❄️ +${xpGain} XP!`);
     }
     
     element.style.transform = 'scale(2) rotate(720deg)';
@@ -1289,8 +1969,10 @@
     checkAchievements();
     saveProgress();
     
-    if (Math.random() < 0.3) {
-      setTimeout(spawnCollectibleSnowflake, 2000);
+    // Increased spawn rate with magnet powerup
+    const spawnChance = hasPowerup('snowflake-magnet') ? 0.9 : 0.3;
+    if (Math.random() < spawnChance) {
+      setTimeout(spawnCollectibleSnowflake, hasPowerup('snowflake-magnet') ? 1000 : 2000);
     }
   }
   
@@ -1508,10 +2190,33 @@
     if (isAnimating || currentPage >= totalPages) return;
     
     isAnimating = true;
+    
+    // Check for decision points BEFORE turning page
+    const pageName = `page${currentPage}`;
+    if (storyDecisions[pageName] && !gameState.decisions[pageName]) {
+      showDecision(pageName);
+      isAnimating = false;
+      return;
+    }
+    
     gameState.pagesRead.add(currentPage);
-    gameState.xp += 20;
-    gameState.wisdomStars += 1; // Earn wisdom stars for reading
-    gameState.hearthFlames += Math.floor(gameState.streak / 3); // Bonus flames for streaks
+    
+    // Calculate XP with powerups
+    let xpGain = 20;
+    let starGain = 1;
+    let flameGain = Math.floor(gameState.streak / 3);
+    
+    if (hasPowerup('xp-boost')) xpGain *= 2;
+    if (hasItem('earth-roots')) starGain *= 2;
+    if (hasItem('hearth-keeper')) flameGain += 1;
+    if (hasItem('water-blessing')) {
+      xpGain *= 1.2;
+      starGain = Math.ceil(starGain * 1.2);
+    }
+    
+    gameState.xp += xpGain;
+    gameState.wisdomStars += starGain;
+    gameState.hearthFlames += flameGain;
     
     showTransition(() => {
       bookStage.classList.add('zoomed-out');
@@ -1537,6 +2242,201 @@
       }, 100);
     });
   }
+
+  // ===== DECISION SYSTEM =====
+  function showDecision(pageName) {
+    const decision = storyDecisions[pageName];
+    const modal = document.getElementById('decisionModal');
+    
+    document.getElementById('decisionTitle').textContent = decision.title;
+    document.getElementById('decisionText').textContent = decision.text;
+    
+    const choicesContainer = document.getElementById('decisionChoices');
+    choicesContainer.innerHTML = '';
+    
+    decision.choices.forEach((choice, index) => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.innerHTML = `
+        <span class="choice-icon">${choice.icon}</span>
+        ${choice.text}
+        <span class="choice-reward">${choice.reward}</span>
+      `;
+      btn.onclick = () => makeDecision(pageName, index);
+      choicesContainer.appendChild(btn);
+    });
+    
+    modal.classList.add('active');
+  }
+  
+  function makeDecision(pageName, choiceIndex) {
+    const decision = storyDecisions[pageName];
+    const choice = decision.choices[choiceIndex];
+    
+    choice.effect();
+    
+    document.getElementById('decisionModal').classList.remove('active');
+    
+    updateStats();
+    saveProgress();
+    
+    // Continue to next page after decision
+    setTimeout(() => {
+      nextPage();
+    }, 500);
+  }
+
+  // ===== SHOP SYSTEM =====
+  function openShop() {
+    if (!gameState.shopUnlocked) {
+      showNotification("🔒 Shop unlocked after first decision!");
+      return;
+    }
+    
+    updateShopDisplay();
+    document.getElementById('shopModal').classList.add('active');
+  }
+  
+  function closeShop() {
+    document.getElementById('shopModal').classList.remove('active');
+  }
+  
+  function updateShopDisplay() {
+    document.getElementById('shopSnowflakes').textContent = gameState.snowflakesCollected;
+    document.getElementById('shopCrystals').textContent = gameState.iceCrystals;
+    document.getElementById('shopStars').textContent = gameState.wisdomStars;
+    document.getElementById('shopFlames').textContent = gameState.hearthFlames;
+    
+    const container = document.getElementById('shopItems');
+    container.innerHTML = '';
+    
+    Object.keys(shopInventory).forEach(itemId => {
+      const item = shopInventory[itemId];
+      
+      if (!item.unlocked) return;
+      
+      const owned = gameState.inventory.includes(itemId);
+      const canAfford = canAffordItem(item);
+      
+      const itemDiv = document.createElement('div');
+      itemDiv.className = `shop-item ${owned && item.permanent ? 'owned' : ''} ${!canAfford ? 'locked' : ''}`;
+      
+      itemDiv.innerHTML = `
+        <div class="item-icon">${item.icon}</div>
+        <div class="item-name">${item.name}</div>
+        <div class="item-description">${item.description}</div>
+        <div class="item-price">
+          ${item.price.snowflakes ? `<span class="price-tag">❄️ ${item.price.snowflakes}</span>` : ''}
+          ${item.price.crystals ? `<span class="price-tag">💎 ${item.price.crystals}</span>` : ''}
+          ${item.price.stars ? `<span class="price-tag">🌟 ${item.price.stars}</span>` : ''}
+          ${item.price.flames ? `<span class="price-tag">🔥 ${item.price.flames}</span>` : ''}
+        </div>
+        <div class="item-effect">${item.effect}</div>
+        ${owned && item.permanent ? '<div style="color: #50fa7b; margin-top: 10px;">✓ OWNED</div>' : 
+          `<button class="shop-btn" onclick="buyItem('${itemId}')" ${!canAfford || (owned && item.permanent) ? 'disabled' : ''}>
+            ${owned && item.permanent ? 'Owned' : 'Purchase'}
+          </button>`
+        }
+      `;
+      
+      container.appendChild(itemDiv);
+    });
+  }
+  
+  function canAffordItem(item) {
+    return (
+      (!item.price.snowflakes || gameState.snowflakesCollected >= item.price.snowflakes) &&
+      (!item.price.crystals || gameState.iceCrystals >= item.price.crystals) &&
+      (!item.price.stars || gameState.wisdomStars >= item.price.stars) &&
+      (!item.price.flames || gameState.hearthFlames >= item.price.flames)
+    );
+  }
+  
+  function buyItem(itemId) {
+    const item = shopInventory[itemId];
+    
+    if (!canAffordItem(item)) {
+      showNotification("❌ Not enough currency!");
+      return;
+    }
+    
+    // Deduct currency
+    if (item.price.snowflakes) gameState.snowflakesCollected -= item.price.snowflakes;
+    if (item.price.crystals) gameState.iceCrystals -= item.price.crystals;
+    if (item.price.stars) gameState.wisdomStars -= item.price.stars;
+    if (item.price.flames) gameState.hearthFlames -= item.price.flames;
+    
+    // Add to inventory
+    if (item.permanent) {
+      gameState.inventory.push(itemId);
+      showNotification(`✅ ${item.name} purchased permanently!`);
+    } else if (item.powerup) {
+      activatePowerup(itemId, item);
+      showNotification(`⚡ ${item.name} activated!`);
+    }
+    
+    updateStats();
+    updateShopDisplay();
+    saveProgress();
+  }
+  
+  function unlockShopItem(itemId) {
+    if (shopInventory[itemId]) {
+      shopInventory[itemId].unlocked = true;
+    }
+  }
+  
+  function hasItem(itemId) {
+    return gameState.inventory.includes(itemId);
+  }
+
+  // ===== POWERUP SYSTEM =====
+  function activatePowerup(itemId, item) {
+    const powerup = {
+      id: itemId,
+      name: item.name,
+      icon: item.icon,
+      endTime: Date.now() + item.duration
+    };
+    
+    gameState.activePowerups.push(powerup);
+    updatePowerupDisplay();
+    
+    setTimeout(() => {
+      deactivatePowerup(itemId);
+    }, item.duration);
+  }
+  
+  function deactivatePowerup(itemId) {
+    gameState.activePowerups = gameState.activePowerups.filter(p => p.id !== itemId);
+    updatePowerupDisplay();
+    showNotification(`⏱️ Powerup expired`);
+  }
+  
+  function hasPowerup(itemId) {
+    return gameState.activePowerups.some(p => p.id === itemId);
+  }
+  
+  function updatePowerupDisplay() {
+    const container = document.getElementById('activePowerups');
+    container.innerHTML = '';
+    
+    gameState.activePowerups.forEach(powerup => {
+      const timeLeft = Math.ceil((powerup.endTime - Date.now()) / 1000);
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      
+      const div = document.createElement('div');
+      div.className = 'powerup-indicator';
+      div.innerHTML = `
+        <span class="powerup-icon">${powerup.icon}</span>
+        <span class="powerup-text">${minutes}:${seconds.toString().padStart(2, '0')}</span>
+      `;
+      container.appendChild(div);
+    });
+  }
+  
+  setInterval(updatePowerupDisplay, 1000);
   
   function prevPage() {
     if (isAnimating || currentPage <= 1) return;
@@ -1619,6 +2519,7 @@
   // ===== INITIALIZATION =====
   function init() {
     loadProgress();
+    loadStatsPanelState();
     initSnowfall();
     initCollapsibles();
     updatePageDisplay();
